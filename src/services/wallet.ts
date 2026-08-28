@@ -1,4 +1,4 @@
-import * as freighter from '@stellar/freighter-api';
+import { isConnected, requestAccess, getAddress, signTransaction } from '@stellar/freighter-api';
 import { generateTestnetKeypair, fundWithFriendbot, getAccountBalances } from './stellar';
 import { WalletState } from '../types/okada.types';
 
@@ -39,46 +39,60 @@ export function getOrCreateInAppWallet(): { publicKey: string; secretKey: string
 export async function checkFreighterAvailable(): Promise<boolean> {
   try {
     if (typeof window === 'undefined') return false;
-    if (typeof freighter.isConnected === 'function') {
-      const res: any = await freighter.isConnected();
-      if (typeof res === 'boolean') return res;
-      if (res && typeof res.isConnected === 'boolean') return res.isConnected;
+    const res = await isConnected();
+    if (typeof res === 'object' && res !== null && 'isConnected' in res) {
+      return Boolean(res.isConnected);
     }
-    return !!(window as any).freighter;
+    return Boolean(res);
   } catch {
     return false;
   }
 }
 
 /**
- * Connect to Freighter Wallet extension
+ * Connect to Freighter Wallet extension and request access
  */
 export async function connectFreighter(): Promise<{ publicKey: string } | null> {
   try {
-    const isAvailable = await checkFreighterAvailable();
-    if (!isAvailable) return null;
+    const available = await checkFreighterAvailable();
+    if (!available) return null;
 
-    let pubKey = '';
-    if (typeof freighter.getPublicKey === 'function') {
-      const res: any = await freighter.getPublicKey();
-      if (typeof res === 'string') {
-        pubKey = res;
-      } else if (res && res.publicKey) {
-        pubKey = res.publicKey;
-      } else if (res && res.address) {
-        pubKey = res.address;
-      }
+    // Request access from user via Freighter popup
+    const accessRes = await requestAccess();
+    if (accessRes && 'address' in accessRes && accessRes.address) {
+      return { publicKey: accessRes.address };
     }
 
-    if (!pubKey && typeof freighter.requestAccess === 'function') {
-      const access: any = await freighter.requestAccess();
-      if (typeof access === 'string') pubKey = access;
-      else if (access && access.address) pubKey = access.address;
+    // Fallback to getAddress if already permitted
+    const addrRes = await getAddress();
+    if (addrRes && 'address' in addrRes && addrRes.address) {
+      return { publicKey: addrRes.address };
     }
 
-    return pubKey ? { publicKey: pubKey } : null;
+    return null;
   } catch (err) {
     console.warn('Freighter connect error:', err);
+    return null;
+  }
+}
+
+/**
+ * Sign a transaction using Freighter wallet
+ */
+export async function signWithFreighter(
+  xdr: string,
+  networkPassphrase?: string
+): Promise<string | null> {
+  try {
+    const result = await signTransaction(xdr, {
+      networkPassphrase,
+    });
+    if (result && 'signedTxXdr' in result && result.signedTxXdr) {
+      return result.signedTxXdr;
+    }
+    return null;
+  } catch (err) {
+    console.error('Freighter transaction signing error:', err);
     return null;
   }
 }
