@@ -1,5 +1,9 @@
 # OKADA — Fast Payments for Every Ride 🏍️⚡
 
+[![Deployed with Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=flat&logo=vercel)](https://vercel.com)
+[![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet-emerald?style=flat&logo=stellar)](https://stellar.org)
+[![Soroban Smart Contract](https://img.shields.io/badge/Soroban-Rust%20Contract-teal?style=flat)](https://soroban.stellar.org)
+
 **OKADA** is a mobile-first digital payment platform built specifically for commercial motorcycle and bike riders ("okadas") and passengers in West Africa (Nigeria, Ghana, Côte d'Ivoire, Sierra Leone, etc.).
 
 Powered by the **Stellar blockchain** and a **Soroban smart contract**, OKADA makes paying for a ride as simple and fast as scanning a QR code.
